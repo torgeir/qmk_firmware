@@ -1,4 +1,25 @@
-# Quantum Mechanical Keyboard Firmware
+# Nyquist rev5 levinson keyboard
+
+A 4x6, split variant of my [previous planck es](https://configure.zsa.io/planck-ez/layouts/BNWxB/43ODz/0).
+
+The layout lives under [keyboards/keebio/nyquist/keymaps/torgmap](keyboards/keebio/nyquist/keymaps/torgmap)
+
+``` sh
+qmk compile -kb keebio/nyquist/rev5 -km torgmap
+qmk flash -kb keebio/nyquist/rev5 -km torgmap
+# hit _LOWER+_UPPER+QK_BOOT, enjoy
+```
+
+Parts:
+
+- [Nyquist rev 5 PCB and Levinson FR4 plates](https://keeb.io/products/nyquist-levinson-rev-5-pcb-kit-60-40-split-ortholinear-keyboard)
+- Gateron black inc, lubed
+- Keycaps moved over from the planck ez
+
+---
+---
+
+# QUANTUM Mechanical Keyboard Firmware
 
 [![Current Version](https://img.shields.io/github/tag/qmk/qmk_firmware.svg)](https://github.com/qmk/qmk_firmware/tags)
 [![Discord](https://img.shields.io/discord/440868230475677696.svg)](https://discord.gg/qmk)
