@@ -11,4 +11,6 @@ MOUSEKEY_ENABLE = yes
 # probably uses rgbmatrix by default?
 # cause the nyquist/levinson have rbg
 BACKLIGHT_ENABLE = no
+
+# TODO not working with yes
 RGBLIGHT_ENABLE = no
