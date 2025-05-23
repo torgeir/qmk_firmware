@@ -5,6 +5,7 @@ A 4x6, split variant of my [previous planck es](https://configure.zsa.io/planck-
 The layout lives under [keyboards/keebio/nyquist/keymaps/torgmap](keyboards/keebio/nyquist/keymaps/torgmap)
 
 ``` sh
+git submodule update --init --recursive
 qmk compile -kb keebio/nyquist/rev5 -km torgmap
 qmk flash -kb keebio/nyquist/rev5 -km torgmap
 # hit _LOWER+_UPPER+QK_BOOT, enjoy
