@@ -61,7 +61,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   _______,  _______,  MS_WHLD, MS_UP,   MS_WHLU, _______, /**/ _______, KC_PGDN, KC_PGUP, KC_MPRV, KC_MPLY, KC_MNXT,
   _______,  _______,  MS_LEFT, MS_DOWN, MS_RGHT, _______, /**/ KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, KC_MUTE, KC_VOLU,
   RGB_TOG,  RGB_MOD,  RGB_HUI, RGB_VAI, RGB_SPI, EE_CLR,  /**/ _______, MS_BTN1, MS_BTN3, MS_BTN2, _______, KC_VOLD,
-  MO(_FUN), RGB_RMOD, RGB_HUD, RGB_VAD, RGB_SPD, QK_RBT,  /**/ QK_BOOT, _______, _______, _______, _______, _______
+  TO(_FUN), RGB_RMOD, RGB_HUD, RGB_VAD, RGB_SPD, QK_RBT,  /**/ QK_BOOT, _______, _______, _______, _______, _______
 ),
 [_FUN] = LAYOUT_ortho_4x12(
   _______, _______, _______, _______, _______, _______, /**/ _______, _______, KC_UP,   _______, _______, _______,
@@ -189,21 +189,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   return true;
 }
 
-static void set_layer_color(uint8_t layer) {
+static void set_layer_color(uint8_t hue, uint8_t sat, uint8_t val) {
   save_rgb_state();
-
   rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-  switch(layer) {
-    case _LOWER:
-      rgb_matrix_sethsv_noeeprom(HSV_BLUE);
-      break;
-    case _RAISE:
-      rgb_matrix_sethsv_noeeprom(HSV_GREEN);
-      break;
-    case _ADJUST:
-      rgb_matrix_sethsv_noeeprom(HSV_RED);
-      break;
-  }
+  rgb_matrix_sethsv_noeeprom(hue, sat, val);
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
@@ -211,14 +200,60 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
   }
 
-  if (layer_state_cmp(state, _ADJUST)) {
-    set_layer_color(_ADJUST);
+  if (layer_state_cmp(state, _FUN)) {
+    set_layer_color(HSV_ORANGE);
+  } else if (layer_state_cmp(state, _NAV)) {
+    set_layer_color(HSV_CYAN);
+  } else if (layer_state_cmp(state, _ADJUST)) {
+    set_layer_color(HSV_BLUE);
   } else if (layer_state_cmp(state, _RAISE)) {
-    set_layer_color(_RAISE);
+    set_layer_color(HSV_GREEN);
   } else if (layer_state_cmp(state, _LOWER)) {
-    set_layer_color(_LOWER);
+    set_layer_color(HSV_RED);
   } else {
     restore_rgb_state();
   }
+
   return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
 }
+
+//bool rgb_matrix_indicators_user(void) {
+//  save_rgb_state();
+//
+//  if (layer_state_is(_LOWER)) {
+//      // Highlight left half for navigation
+//      for(int i = 0; i < 30; i++) {
+//          rgb_matrix_set_color(i, RGB_BLUE);
+//      }
+//  }
+//
+//  if (layer_state_is(_RAISE)) {
+//      // Highlight right half for symbols
+//      for(int i = 30; i < 60; i++) {
+//          rgb_matrix_set_color(i, RGB_GREEN);
+//      }
+//  }
+//
+//  restore_rgb_state();
+//
+//  // Skip normal RGB matrix processing (if you want ONLY your individual key colors)
+//  //return true;
+//  // Continue with normal RGB matrix processing
+//  return false;
+//}
+
+//bool rgb_matrix_indicators_user(void) {
+//  // Light up keys one by one to identify indices
+//  static uint8_t current_key = 0;
+//  rgb_matrix_set_color_all(RGB_OFF);
+//  rgb_matrix_set_color(current_key, RGB_WHITE);
+//
+//  // Increment every 500ms (adjust as needed)
+//  static uint32_t timer = 0;
+//  if (timer_elapsed32(timer) > 500) {
+//      current_key = (current_key + 1) % RGB_MATRIX_LED_COUNT;
+//      timer = timer_read32();
+//  }
+//
+//  return false;
+//}
