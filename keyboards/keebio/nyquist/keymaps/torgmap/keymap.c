@@ -6,6 +6,9 @@
 
 #include QMK_KEYBOARD_H
 #include "keymap_norwegian.h" // NO_*
+#ifdef RGB_MATRIX_ENABLE
+#include "rgb_matrix.h"
+#endif
 
 // TODO not working
 /* void keyboard_post_init_user(void) { */
@@ -75,6 +78,28 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 
+static uint8_t saved_rgb_mode = 0;
+static uint8_t saved_hsv[3] = {0}; // [hue, sat, val]
+static bool layer_override_active = false;
+
+static void save_rgb_state(void) {
+  if (!layer_override_active) {
+    saved_rgb_mode = rgb_matrix_get_mode();
+    saved_hsv[0] = rgb_matrix_get_hue();
+    saved_hsv[1] = rgb_matrix_get_sat();
+    saved_hsv[2] = rgb_matrix_get_val();
+    layer_override_active = true;
+  }
+}
+
+static void restore_rgb_state(void) {
+  if (layer_override_active) {
+    layer_override_active = false;
+    rgb_matrix_sethsv_noeeprom(saved_hsv[0], saved_hsv[1], saved_hsv[2]);
+    rgb_matrix_mode_noeeprom(saved_rgb_mode);
+  }
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
     case LOWER:
@@ -97,6 +122,70 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
       return false;
       break;
+
+    // Handle RGB changes - update saved state when they're used
+    case RGB_MOD:
+    case RGB_RMOD:
+    case RGB_HUI:
+    case RGB_HUD:
+    case RGB_SAI:
+    case RGB_SAD:
+    case RGB_VAI:
+    case RGB_VAD:
+    case RGB_TOG:
+    case RGB_MODE_PLAIN:
+    case RGB_MODE_BREATHE:
+    case RGB_MODE_RAINBOW:
+    case RGB_MODE_SWIRL:
+    case RGB_MODE_SNAKE:
+    case RGB_MODE_KNIGHT:
+    case RGB_MODE_XMAS:
+    case RGB_MODE_GRADIENT:
+    case RGB_MODE_RGBTEST:
+      if (record->event.pressed && layer_override_active) {
+        // Let the RGB change happen first
+        bool result = true; // Process the keycode normally
+
+        // Update our saved values with the new RGB settings
+        saved_rgb_mode = rgb_matrix_get_mode();
+        saved_hsv[0] = rgb_matrix_get_hue();
+        saved_hsv[1] = rgb_matrix_get_sat();
+        saved_hsv[2] = rgb_matrix_get_val();
+
+        return result;
+      }
+    break;
   }
+
   return true;
+}
+
+static void set_layer_color(uint8_t layer) {
+  save_rgb_state();
+
+  rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
+  switch(layer) {
+    case _LOWER:
+      rgb_matrix_sethsv_noeeprom(HSV_BLUE);    // Blue for LOWER
+      break;
+    case _RAISE:
+      rgb_matrix_sethsv_noeeprom(HSV_GREEN);   // Green for RAISE
+      break;
+    case _ADJUST:
+      rgb_matrix_sethsv_noeeprom(HSV_RED);     // Red for ADJUST
+      break;
+  }
+}
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+  if (layer_state_cmp(state, _ADJUST)) {
+    set_layer_color(_ADJUST);
+  } else if (layer_state_cmp(state, _RAISE)) {
+    set_layer_color(_RAISE);
+  } else if (layer_state_cmp(state, _LOWER)) {
+    set_layer_color(_LOWER);
+  } else {
+    restore_rgb_state();
+  }
+  return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
 }

@@ -7,6 +7,9 @@ UNICODE_ENABLE = yes
 # control mouse
 MOUSEKEY_ENABLE = yes
 
+# see next comment, yes it does
+RGB_MATRIX_ENABLE = yes
+
 # dont need them
 # probably uses rgbmatrix by default?
 # cause the nyquist/levinson have rbg
