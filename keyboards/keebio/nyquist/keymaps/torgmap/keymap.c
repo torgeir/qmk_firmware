@@ -81,14 +81,17 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 static uint8_t saved_rgb_mode = 0;
 static uint8_t saved_hsv[3] = {0}; // [hue, sat, val]
 static bool layer_override_active = false;
+static bool in_bootloader_mode = false;
+static bool bootloader_queued = false;
+static uint32_t bootloader_jump_timer = 0;
 
 static void save_rgb_state(void) {
   if (!layer_override_active) {
+    layer_override_active = true;
     saved_rgb_mode = rgb_matrix_get_mode();
     saved_hsv[0] = rgb_matrix_get_hue();
     saved_hsv[1] = rgb_matrix_get_sat();
     saved_hsv[2] = rgb_matrix_get_val();
-    layer_override_active = true;
   }
 }
 
@@ -100,8 +103,41 @@ static void restore_rgb_state(void) {
   }
 }
 
+static void update_rgb_state(void) {
+  saved_rgb_mode = rgb_matrix_get_mode();
+  saved_hsv[0] = rgb_matrix_get_hue();
+  saved_hsv[1] = rgb_matrix_get_sat();
+  saved_hsv[2] = rgb_matrix_get_val();
+}
+
+// Runs continuously
+void matrix_scan_user(void) {
+  // Check if bootloader jump is queued and timer expired
+  // Its done this way to be able to change the color before it runs
+  if (bootloader_queued && timer_elapsed32(bootloader_jump_timer) > 300) {
+    bootloader_jump();
+  }
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  // Clear bootloader mode on any other keypress
+  if (keycode != QK_BOOT && record->event.pressed) {
+    in_bootloader_mode = false;
+  }
   switch (keycode) {
+    case QK_BOOT:
+      if (record->event.pressed) {
+        in_bootloader_mode = true;
+        layer_override_active = false;
+        rgb_matrix_sethsv_noeeprom(HSV_WHITE);
+        rgb_matrix_mode_noeeprom(RGB_MATRIX_BREATHING);
+        update_rgb_state();
+        bootloader_queued = true;
+        bootloader_jump_timer = timer_read32();
+      }
+      return false;
+      break;
+
     case LOWER:
       if (record->event.pressed) {
         layer_on(_LOWER);
@@ -112,6 +148,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
       return false;
       break;
+
     case RAISE:
       if (record->event.pressed) {
         layer_on(_RAISE);
@@ -143,16 +180,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case RGB_MODE_GRADIENT:
     case RGB_MODE_RGBTEST:
       if (record->event.pressed && layer_override_active) {
-        // Let the RGB change happen first
-        bool result = true; // Process the keycode normally
-
-        // Update our saved values with the new RGB settings
-        saved_rgb_mode = rgb_matrix_get_mode();
-        saved_hsv[0] = rgb_matrix_get_hue();
-        saved_hsv[1] = rgb_matrix_get_sat();
-        saved_hsv[2] = rgb_matrix_get_val();
-
-        return result;
+        update_rgb_state();
+        return true;
       }
     break;
   }
@@ -166,18 +195,22 @@ static void set_layer_color(uint8_t layer) {
   rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
   switch(layer) {
     case _LOWER:
-      rgb_matrix_sethsv_noeeprom(HSV_BLUE);    // Blue for LOWER
+      rgb_matrix_sethsv_noeeprom(HSV_BLUE);
       break;
     case _RAISE:
-      rgb_matrix_sethsv_noeeprom(HSV_GREEN);   // Green for RAISE
+      rgb_matrix_sethsv_noeeprom(HSV_GREEN);
       break;
     case _ADJUST:
-      rgb_matrix_sethsv_noeeprom(HSV_RED);     // Red for ADJUST
+      rgb_matrix_sethsv_noeeprom(HSV_RED);
       break;
   }
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
+  if (in_bootloader_mode) {
+    return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
+  }
+
   if (layer_state_cmp(state, _ADJUST)) {
     set_layer_color(_ADJUST);
   } else if (layer_state_cmp(state, _RAISE)) {
