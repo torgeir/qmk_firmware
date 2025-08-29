@@ -10,6 +10,16 @@
 #include "rgb_matrix.h"
 #endif
 
+const uint8_t X[3] = {RGB_OFF};    // X for off/none
+const uint8_t R[3] = {RGB_RED};
+const uint8_t B[3] = {RGB_BLUE};
+const uint8_t G[3] = {RGB_GREEN};
+const uint8_t W[3] = {RGB_WHITE};
+const uint8_t Y[3] = {RGB_YELLOW};
+const uint8_t O[3] = {RGB_ORANGE};
+const uint8_t P[3] = {RGB_PINK};
+const uint8_t C[3] = {RGB_CYAN};
+
 // order matters
 enum layer_names {
     _QWERTY,
@@ -43,10 +53,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   TO(_RAISE),  _______,      _______,      _______,         _______,     KC_BSPC,      /**/  _______,         _______,      _______,         _______,         _______,         _______
 ),
 [_RAISE] = LAYOUT_ortho_4x12(
-  KC_EQL,      KC_1,               KC_2,                KC_3,                KC_4,   KC_5,        /**/ KC_6,         KC_7,    KC_8, KC_9,   KC_0,         KC_LBRC/*å*/,
-  S(KC_BSPC),  KC_F1,              KC_F2,               KC_F3,               KC_F4,  KC_PERC,     /**/ KC_PSLS/*/*/, KC_4,    KC_5, KC_6,   KC_PAST/***/, KC_PEQL/*=*/,
-  KC_LSFT,     KC_F5,              KC_F6,               KC_F7,               KC_F8,  _______,     /**/ KC_PPLS/*+*/, KC_1,    KC_2, KC_3,   KC_PMNS/*-*/, KC_BSLS/*@*/,
-  TO(_QWERTY), MT(KC_LCTL, KC_F9), MT(KC_LALT, KC_F10), MT(KC_LGUI, KC_F11), KC_F12, TO(_QWERTY), /**/ KC_BSPC,      _______, KC_0, KC_DOT, KC_COMM,      TO(_NAV)
+  KC_EQL,      KC_1,               KC_2,                KC_3,                KC_4,   KC_5,        /**/ KC_6,         KC_7,        KC_8, KC_9,   KC_0,         KC_LBRC/*å*/,
+  S(KC_BSPC),  KC_F1,              KC_F2,               KC_F3,               KC_F4,  KC_PERC,     /**/ KC_PSLS/*/*/, KC_4,        KC_5, KC_6,   KC_PAST/***/, KC_PEQL/*=*/,
+  KC_LSFT,     KC_F5,              KC_F6,               KC_F7,               KC_F8,  _______,     /**/ KC_PPLS/*+*/, KC_1,        KC_2, KC_3,   KC_PMNS/*-*/, KC_BSLS/*@*/,
+  TO(_QWERTY), MT(KC_LCTL, KC_F9), MT(KC_LALT, KC_F10), MT(KC_LGUI, KC_F11), KC_F12, TO(_QWERTY), /**/ KC_BSPC,      TO(_QWERTY), KC_0, KC_DOT, KC_COMM,      TO(_NAV)
 ),
 [_ADJUST] = LAYOUT_ortho_4x12(
   _______,  _______,  MS_WHLD, MS_UP,   MS_WHLU, _______, /**/ _______, KC_PGDN, KC_PGUP, KC_MPRV, KC_MPLY, KC_MNXT,
@@ -62,10 +72,79 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 ),
 [_NAV] = LAYOUT_ortho_4x12(
   _______, _______, MS_WHLD, MS_UP,   MS_WHLU, _______, /**/ _______, KC_PGDN,     KC_PGUP, _______, _______, _______,
-  _______, _______, MS_LEFT, MS_DOWN, MS_RGHT, _______, /**/ KC_LEFT, KC_DOWN,     KC_UP,  KC_RGHT,  _______, _______,
-  _______, _______, _______, _______, _______, _______, /**/ _______, _______,     _______, _______, _______, _______,
+  _______, _______, MS_LEFT, MS_DOWN, MS_RGHT, _______, /**/ KC_LEFT, KC_DOWN,     KC_UP,   KC_RGHT, _______, _______,
+  _______, _______, _______, _______, _______, _______, /**/ _______, MS_BTN1,     MS_BTN3, MS_BTN2, _______, _______,
   _______, _______, _______, _______, _______, _______, /**/ _______, TO(_QWERTY), _______, _______, _______, _______
 )
+};
+
+const uint8_t* led_layout_nav[][6] = {
+    // left
+    {X, X, C, Y, C, X},
+    {X, X, Y, Y, Y, X},
+    {X, X, X, X, X, X},
+    {X, X, X, X, X, X},
+
+    // right
+    {X, C, C, X, X, X},
+    {G, G, G, G, X, X},
+    {X, Y, Y, Y, X, X},
+    {X, W, X, X, X, X},
+};
+
+const uint8_t* led_layout_fun[][6] = {
+    // left
+    {X, X, X, X, X, X},
+    {X, X, X, X, X, X},
+    {B, X, X, X, X, X},
+    {X, X, X, X, X, X},
+
+    // right
+    {X, X, Y, X, X, X},
+    {X, Y, Y, Y, X, X},
+    {X, X, X, X, X, X},
+    {X, W, X, X, X, X},
+};
+
+const uint8_t* led_layout_adjust[][6] = {
+    // left
+    {X, X, C, Y, C, X},
+    {X, X, Y, Y, Y, X},
+    {O, O, O, O, O, R},
+    {W, O, O, O, O, R},
+
+    // right
+    {X, C, C, B, B, B},
+    {G, G, G, G, B, B},
+    {X, Y, Y, Y, X, B},
+    {R, X, X, X, X, X},
+};
+const uint8_t* led_layout_lower[][6] = {
+    // left
+    {B, B, B, B, B, B},
+    {X, X, P, P, X, X},
+    {X, X, P, P, X, X},
+    {W, X, X, X, X, X},
+
+    // right
+    {B, B, B, B, B, B},
+    {B, B, P, P, B, B},
+    {X, B, P, P, B, B},
+    {X, W, G, G, G, G},
+};
+
+const uint8_t* led_layout_raise[][6] = {
+    // left
+    {B, G, G, G, G, G},
+    {X, R, R, R, R, X},
+    {X, R, R, R, R, X},
+    {W, R, R, R, R, W},
+
+    // right
+    {G, G, G, G, G, P},
+    {B, G, G, G, B, B},
+    {B, G, G, G, B, B},
+    {P, W, G, B, B, W},
 };
 
 static uint8_t saved_rgb_mode = 0;
@@ -172,50 +251,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     return state;
 }
 
-/*
- * // Row 0 (top row)
-0  = [0,0] TAB      (flags: 4)
-1  = [0,1] Q        (flags: 4)
-2  = [0,2] W        (flags: 4)
-3  = underglow      (flags: 2) <-- UNDERGLOW
-4  = [0,3] E        (flags: 4)
-5  = [0,4] R        (flags: 4)
-6  = [0,5] T        (flags: 4)
-
-// Row 1
-7  = [1,5] G        (flags: 4)
-8  = underglow      (flags: 2) <-- UNDERGLOW
-9  = [1,4] F        (flags: 4)
-10 = [1,3] D        (flags: 4)
-11 = [1,2] S        (flags: 4)
-12 = [1,1] A        (flags: 4)
-13 = underglow      (flags: 2) <-- UNDERGLOW
-14 = [1,0] ESC/CTRL (flags: 4)
-
-// Row 2
-15 = [2,0] SHIFT    (flags: 4)
-16 = [2,1] Z        (flags: 4)
-17 = [2,2] X        (flags: 4)
-18 = [2,3] C        (flags: 4)
-19 = [2,4] V        (flags: 4)
-20 = [2,5] B        (flags: 4)
-
-// Row 3
-21 = [3,5] SPACE    (flags: 4)
-22 = underglow      (flags: 2) <-- UNDERGLOW
-23 = [3,4] LOWER    (flags: 4)
-24 = [3,3] GUI      (flags: 4)
-25 = underglow      (flags: 2) <-- UNDERGLOW
-26 = [3,2] ALT      (flags: 4)
-27 = [3,1] CTRL     (flags: 4)
-28 = underglow      (flags: 2) <-- UNDERGLOW
-29 = [3,0] HYPR     (flags: 4)
-
-// Row 4 (broken off)
-30-35 = Row 4 keys and underglow
-
- */
-// Better approach - just list the actual key LEDs
+// led positions of nyquist rev5, left side
 const uint8_t ledsl[] = {
     0,   1,  2,  4,  5,  6, // Row 0
     14, 12, 11, 10,  9,  7, // Row 1
@@ -223,6 +259,7 @@ const uint8_t ledsl[] = {
     29, 27, 26, 24, 23, 21  // Row 3
 };
 
+// underglow led positions of nyquist rev5, left side
 const uint8_t ledslu[] = {
     3,         // row 0
     13, 8,     // row 1
@@ -230,13 +267,15 @@ const uint8_t ledslu[] = {
     28, 25, 22 // row 3
 };
 
+// led positions of nyquist rev5, right side
 const uint8_t ledsr[] = {
     36, 37, 38, 40, 41, 42, // Row 0
     50, 48, 47, 46, 45, 43, // Row 1
     51, 52, 53, 54, 55, 56, // Row 2
     65, 63, 62, 60, 59, 57  // Row 3
 };
-const uint8_t ledslr[] = {
+// underglow led positions of nyquist rev5, right side
+const uint8_t ledsru[] = {
     39,        // row 0
     49, 44,    // row 1
     // none    // row 2
@@ -244,54 +283,65 @@ const uint8_t ledslr[] = {
 };
 
 
-
 // !!! remember to flash both halves when mucking around with led colors
+
+void apply_led_layout(const uint8_t* layout[][6]) {
+    // left
+    for (uint8_t row = 0; row < 4; row++) {
+        for (uint8_t col = 0; col < 6; col++) {
+            uint8_t led_index = ledsl[row * 6 + col];
+            const uint8_t* color = layout[row][col];
+            if (color == X) {
+                rgb_matrix_set_color(led_index, 0, 0, 0);
+            } else {
+                rgb_matrix_set_color(led_index, color[0], color[1], color[2]);
+            }
+        }
+    }
+
+    // right
+    for (uint8_t row = 0; row < 4; row++) {
+        for (uint8_t col = 0; col < 6; col++) {
+            uint8_t led_index = ledsr[row * 6 + col];
+            const uint8_t* color = layout[row + 4][col];
+            if (color == X) {
+                rgb_matrix_set_color(led_index, 0, 0, 0);
+            } else {
+                rgb_matrix_set_color(led_index, color[0], color[1], color[2]);
+            }
+        }
+    }
+}
+
 bool rgb_matrix_indicators_user(void) {
     uint8_t layer = get_highest_layer(layer_state);
 
     switch(layer) {
+        case _NAV:
+            /* rgb_matrix_set_color(39, 255, 255, 255); // Right underglow white */
+            apply_led_layout(led_layout_nav);
+            break;
+
+        case _FUN:
+            apply_led_layout(led_layout_fun);
+            break;
+
         case _ADJUST:
-            rgb_matrix_set_color(3, RGB_WHITE); // underglow
-            rgb_matrix_set_color(39, RGB_BLUE); // underglow
+            apply_led_layout(led_layout_adjust);
             break;
 
         case _LOWER:
-            // Light up specific keys for LOWER layer
-            rgb_matrix_set_color(0, RGB_RED);  // TAB
-            rgb_matrix_set_color(1, RGB_RED);  // Q
-            rgb_matrix_set_color(2, RGB_RED);  // W
-            //
-            rgb_matrix_set_color(3, RGB_GREEN); // underglow
-            //
-            rgb_matrix_set_color(4, RGB_RED);  // E (skip 3)
-            rgb_matrix_set_color(5, RGB_RED);  // R
-            rgb_matrix_set_color(6, RGB_RED);  // T
-
-            // Light up top row right (skip underglow at index 39)
-            rgb_matrix_set_color(36, RGB_YELLOW);  // Y
-            rgb_matrix_set_color(37, RGB_YELLOW);  // U
-            rgb_matrix_set_color(38, RGB_YELLOW);  // I
-            //
-            rgb_matrix_set_color(39, RGB_WHITE);
-            //
-            rgb_matrix_set_color(40, RGB_YELLOW);  // O (skip 39)
-            rgb_matrix_set_color(41, RGB_YELLOW);  // P
-            rgb_matrix_set_color(42, RGB_YELLOW);  // BSPC
+            apply_led_layout(led_layout_lower);
             break;
 
         case _RAISE:
-            // F-keys on left
-            rgb_matrix_set_color(3, RGB_WHITE); // underglow
-            rgb_matrix_set_color(39, RGB_BLUE); // underglow
+            apply_led_layout(led_layout_raise);
             break;
 
         default:
-            // Base layer - you can leave default effect or set subtle indicators
-            // For example, highlight the layer keys
-            rgb_matrix_set_color(28, RGB_WHITE);  // LOWER key
-            rgb_matrix_set_color(43, RGB_WHITE);  // RAISE key
+            // Base layer - turn off all custom colors
             break;
     }
 
-    return false;  // Don't run default indicators
+    return false;
 }
