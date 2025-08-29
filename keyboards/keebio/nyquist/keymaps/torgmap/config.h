@@ -1,9 +1,8 @@
-// TODO the following does not work
-/* #define RGBLIGHT_LED_COUNT 16 */
+#pragma once
 
-// unused
-/* #define RGBLED_SPLIT { 6, 6 } */
-/* #define RGBLIGHT_EFFECT_BREATHING */
-/* #define RGBLIGHT_DEFAULT_VAL 130 */
-/* #define RGBLIGHT_DEFAULT_MODE RGBLIGHT_MODE_BREATHING */
-/* #define RGBLIGHT_DEFAULT_SPD 3 */
+// split state
+#define SPLIT_RGB_MATRIX_ENABLE
+#define SPLIT_LAYER_STATE_ENABLE
+#define SPLIT_LED_STATE_ENABLE
+#define SPLIT_TRANSPORT_MIRROR
+#define SPLIT_MODS_ENABLE

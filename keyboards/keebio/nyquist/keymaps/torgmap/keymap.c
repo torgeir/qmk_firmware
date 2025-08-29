@@ -10,15 +10,6 @@
 #include "rgb_matrix.h"
 #endif
 
-// TODO not working
-/* void keyboard_post_init_user(void) { */
-/*     // Set per-key RGB mode (adjust as needed) */
-/*     rgb_matrix_mode(RGB_MATRIX_RAINBOW_BEACON); */
-/*     // Set underglow to a solid color (e.g., blue) */
-/*     rgblight_mode(1); */
-/*     rgblight_sethsv(180, 255, 128); // Hue 180 = blue, adjust as needed */
-/* } */
-
 // order matters
 enum layer_names {
     _QWERTY,
@@ -67,7 +58,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   _______, _______, _______, _______, _______, _______, /**/ _______, _______, KC_UP,   _______, _______, _______,
   _______, _______, _______, _______, _______, _______, /**/ _______, KC_LEFT, KC_DOWN, KC_RGHT, _______, _______,
   KC_CAPS, _______, _______, _______, _______, _______, /**/ _______, _______, _______, _______, _______, _______,
-  _______, _______, _______, _______, _______, _______, /**/ _______, _______, _______, _______, _______, _______
+  _______, _______, _______, _______, _______, _______, /**/ _______, TO(_QWERTY), _______, _______, _______, _______
 ),
 [_NAV] = LAYOUT_ortho_4x12(
   _______, _______, MS_WHLD, MS_UP,   MS_WHLU, _______, /**/ _______, KC_PGDN,     KC_PGUP, _______, _______, _______,
@@ -77,7 +68,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 )
 };
 
-
 static uint8_t saved_rgb_mode = 0;
 static uint8_t saved_hsv[3] = {0}; // [hue, sat, val]
 static bool layer_override_active = false;
@@ -85,6 +75,7 @@ static bool in_bootloader_mode = false;
 static bool bootloader_queued = false;
 static uint32_t bootloader_jump_timer = 0;
 
+__attribute__((unused))
 static void save_rgb_state(void) {
   if (!layer_override_active) {
     layer_override_active = true;
@@ -95,6 +86,7 @@ static void save_rgb_state(void) {
   }
 }
 
+__attribute__((unused))
 static void restore_rgb_state(void) {
   if (layer_override_active) {
     layer_override_active = false;
@@ -103,6 +95,7 @@ static void restore_rgb_state(void) {
   }
 }
 
+__attribute__((unused))
 static void update_rgb_state(void) {
   saved_rgb_mode = rgb_matrix_get_mode();
   saved_hsv[0] = rgb_matrix_get_hue();
@@ -159,101 +152,146 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
       return false;
       break;
-
-    // Handle RGB changes - update saved state when they're used
-    case RGB_MOD:
-    case RGB_RMOD:
-    case RGB_HUI:
-    case RGB_HUD:
-    case RGB_SAI:
-    case RGB_SAD:
-    case RGB_VAI:
-    case RGB_VAD:
-    case RGB_TOG:
-    case RGB_MODE_PLAIN:
-    case RGB_MODE_BREATHE:
-    case RGB_MODE_RAINBOW:
-    case RGB_MODE_SWIRL:
-    case RGB_MODE_SNAKE:
-    case RGB_MODE_KNIGHT:
-    case RGB_MODE_XMAS:
-    case RGB_MODE_GRADIENT:
-    case RGB_MODE_RGBTEST:
-      if (record->event.pressed && layer_override_active) {
-        update_rgb_state();
-        return true;
-      }
-    break;
   }
 
   return true;
 }
 
-static void set_layer_color(uint8_t hue, uint8_t sat, uint8_t val) {
-  save_rgb_state();
-  rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
-  rgb_matrix_sethsv_noeeprom(hue, sat, val);
+void keyboard_post_init_user(void) {
+  /* rgb_matrix_mode_noeeprom(RGB_MATRIX_JELLYBEAN_RAINDROPS); */
 }
 
+// Add this to see if the slave is getting layer updates
 layer_state_t layer_state_set_user(layer_state_t state) {
-  if (in_bootloader_mode) {
-    return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
-  }
-
-  if (layer_state_cmp(state, _FUN)) {
-    set_layer_color(HSV_ORANGE);
-  } else if (layer_state_cmp(state, _NAV)) {
-    set_layer_color(HSV_CYAN);
-  } else if (layer_state_cmp(state, _ADJUST)) {
-    set_layer_color(HSV_BLUE);
-  } else if (layer_state_cmp(state, _RAISE)) {
-    set_layer_color(HSV_GREEN);
-  } else if (layer_state_cmp(state, _LOWER)) {
-    set_layer_color(HSV_RED);
-  } else {
-    restore_rgb_state();
-  }
-
-  return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
+    if (is_keyboard_master()) {
+        uprintf("Master received layer: %d\n", get_highest_layer(state));
+    }
+    if (!is_keyboard_master()) {
+        uprintf("Slave received layer: %d\n", get_highest_layer(state));
+    }
+    return state;
 }
 
-//bool rgb_matrix_indicators_user(void) {
-//  save_rgb_state();
-//
-//  if (layer_state_is(_LOWER)) {
-//      // Highlight left half for navigation
-//      for(int i = 0; i < 30; i++) {
-//          rgb_matrix_set_color(i, RGB_BLUE);
-//      }
-//  }
-//
-//  if (layer_state_is(_RAISE)) {
-//      // Highlight right half for symbols
-//      for(int i = 30; i < 60; i++) {
-//          rgb_matrix_set_color(i, RGB_GREEN);
-//      }
-//  }
-//
-//  restore_rgb_state();
-//
-//  // Skip normal RGB matrix processing (if you want ONLY your individual key colors)
-//  //return true;
-//  // Continue with normal RGB matrix processing
-//  return false;
-//}
+/*
+ * // Row 0 (top row)
+0  = [0,0] TAB      (flags: 4)
+1  = [0,1] Q        (flags: 4)
+2  = [0,2] W        (flags: 4)
+3  = underglow      (flags: 2) <-- UNDERGLOW
+4  = [0,3] E        (flags: 4)
+5  = [0,4] R        (flags: 4)
+6  = [0,5] T        (flags: 4)
 
-//bool rgb_matrix_indicators_user(void) {
-//  // Light up keys one by one to identify indices
-//  static uint8_t current_key = 0;
-//  rgb_matrix_set_color_all(RGB_OFF);
-//  rgb_matrix_set_color(current_key, RGB_WHITE);
-//
-//  // Increment every 500ms (adjust as needed)
-//  static uint32_t timer = 0;
-//  if (timer_elapsed32(timer) > 500) {
-//      current_key = (current_key + 1) % RGB_MATRIX_LED_COUNT;
-//      timer = timer_read32();
-//  }
-//
-//  return false;
-//}
+// Row 1
+7  = [1,5] G        (flags: 4)
+8  = underglow      (flags: 2) <-- UNDERGLOW
+9  = [1,4] F        (flags: 4)
+10 = [1,3] D        (flags: 4)
+11 = [1,2] S        (flags: 4)
+12 = [1,1] A        (flags: 4)
+13 = underglow      (flags: 2) <-- UNDERGLOW
+14 = [1,0] ESC/CTRL (flags: 4)
+
+// Row 2
+15 = [2,0] SHIFT    (flags: 4)
+16 = [2,1] Z        (flags: 4)
+17 = [2,2] X        (flags: 4)
+18 = [2,3] C        (flags: 4)
+19 = [2,4] V        (flags: 4)
+20 = [2,5] B        (flags: 4)
+
+// Row 3
+21 = [3,5] SPACE    (flags: 4)
+22 = underglow      (flags: 2) <-- UNDERGLOW
+23 = [3,4] LOWER    (flags: 4)
+24 = [3,3] GUI      (flags: 4)
+25 = underglow      (flags: 2) <-- UNDERGLOW
+26 = [3,2] ALT      (flags: 4)
+27 = [3,1] CTRL     (flags: 4)
+28 = underglow      (flags: 2) <-- UNDERGLOW
+29 = [3,0] HYPR     (flags: 4)
+
+// Row 4 (broken off)
+30-35 = Row 4 keys and underglow
+
+ */
+// Better approach - just list the actual key LEDs
+const uint8_t ledsl[] = {
+    0,   1,  2,  4,  5,  6, // Row 0
+    14, 12, 11, 10,  9,  7, // Row 1
+    15, 16, 17, 18, 19, 20, // Row 2
+    29, 27, 26, 24, 23, 21  // Row 3
+};
+
+const uint8_t ledslu[] = {
+    3,         // row 0
+    13, 8,     // row 1
+    // none    // row 2
+    28, 25, 22 // row 3
+};
+
+const uint8_t ledsr[] = {
+    36, 37, 38, 40, 41, 42, // Row 0
+    50, 48, 47, 46, 45, 43, // Row 1
+    51, 52, 53, 54, 55, 56, // Row 2
+    65, 63, 62, 60, 59, 57  // Row 3
+};
+const uint8_t ledslr[] = {
+    39,        // row 0
+    49, 44,    // row 1
+    // none    // row 2
+    64, 61, 58 // row 3
+};
+
+
+
+// !!! remember to flash both halves when mucking around with led colors
+bool rgb_matrix_indicators_user(void) {
+    uint8_t layer = get_highest_layer(layer_state);
+
+    switch(layer) {
+        case _ADJUST:
+            rgb_matrix_set_color(3, RGB_WHITE); // underglow
+            rgb_matrix_set_color(39, RGB_BLUE); // underglow
+            break;
+
+        case _LOWER:
+            // Light up specific keys for LOWER layer
+            rgb_matrix_set_color(0, RGB_RED);  // TAB
+            rgb_matrix_set_color(1, RGB_RED);  // Q
+            rgb_matrix_set_color(2, RGB_RED);  // W
+            //
+            rgb_matrix_set_color(3, RGB_GREEN); // underglow
+            //
+            rgb_matrix_set_color(4, RGB_RED);  // E (skip 3)
+            rgb_matrix_set_color(5, RGB_RED);  // R
+            rgb_matrix_set_color(6, RGB_RED);  // T
+
+            // Light up top row right (skip underglow at index 39)
+            rgb_matrix_set_color(36, RGB_YELLOW);  // Y
+            rgb_matrix_set_color(37, RGB_YELLOW);  // U
+            rgb_matrix_set_color(38, RGB_YELLOW);  // I
+            //
+            rgb_matrix_set_color(39, RGB_WHITE);
+            //
+            rgb_matrix_set_color(40, RGB_YELLOW);  // O (skip 39)
+            rgb_matrix_set_color(41, RGB_YELLOW);  // P
+            rgb_matrix_set_color(42, RGB_YELLOW);  // BSPC
+            break;
+
+        case _RAISE:
+            // F-keys on left
+            rgb_matrix_set_color(3, RGB_WHITE); // underglow
+            rgb_matrix_set_color(39, RGB_BLUE); // underglow
+            break;
+
+        default:
+            // Base layer - you can leave default effect or set subtle indicators
+            // For example, highlight the layer keys
+            rgb_matrix_set_color(28, RGB_WHITE);  // LOWER key
+            rgb_matrix_set_color(43, RGB_WHITE);  // RAISE key
+            break;
+    }
+
+    return false;  // Don't run default indicators
+}
