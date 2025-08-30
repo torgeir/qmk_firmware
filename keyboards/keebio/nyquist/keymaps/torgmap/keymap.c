@@ -149,6 +149,7 @@ const uint8_t* led_layout_raise[][6] = {
 
 static uint8_t saved_rgb_mode = 0;
 static uint8_t saved_hsv[3] = {0}; // [hue, sat, val]
+
 static bool layer_override_active = false;
 static bool in_bootloader_mode = false;
 static bool bootloader_queued = false;
@@ -173,14 +174,8 @@ static void restore_rgb_state(void) {
     rgb_matrix_mode_noeeprom(saved_rgb_mode);
   }
 }
-
-__attribute__((unused))
-static void update_rgb_state(void) {
-  saved_rgb_mode = rgb_matrix_get_mode();
-  saved_hsv[0] = rgb_matrix_get_hue();
-  saved_hsv[1] = rgb_matrix_get_sat();
-  saved_hsv[2] = rgb_matrix_get_val();
-}
+static bool rgb_just_changed = false;
+static uint32_t rgb_change_timer = 0;
 
 // Runs continuously
 void matrix_scan_user(void) {
@@ -188,6 +183,10 @@ void matrix_scan_user(void) {
   // Its done this way to be able to change the color before it runs
   if (bootloader_queued && timer_elapsed32(bootloader_jump_timer) > 300) {
     bootloader_jump();
+  }
+
+  if (rgb_just_changed && timer_elapsed32(rgb_change_timer) > 2000) {
+    rgb_just_changed = false;
   }
 }
 
@@ -200,14 +199,31 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case QK_BOOT:
       if (record->event.pressed) {
         in_bootloader_mode = true;
-        layer_override_active = false;
+
         rgb_matrix_sethsv_noeeprom(HSV_WHITE);
         rgb_matrix_mode_noeeprom(RGB_MATRIX_BREATHING);
-        update_rgb_state();
+
         bootloader_queued = true;
         bootloader_jump_timer = timer_read32();
       }
       return false;
+      break;
+
+    case RGB_MOD:
+    case RGB_RMOD:
+    case RGB_HUI:
+    case RGB_HUD:
+    case RGB_SAI:
+    case RGB_SAD:
+    case RGB_VAI:
+    case RGB_VAD:
+    case RGB_SPI:
+    case RGB_SPD:
+      if (record->event.pressed) {
+        rgb_just_changed = true;
+        rgb_change_timer = timer_read32();
+      }
+      return true;
       break;
 
     case LOWER:
@@ -237,7 +253,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 void keyboard_post_init_user(void) {
-  /* rgb_matrix_mode_noeeprom(RGB_MATRIX_JELLYBEAN_RAINDROPS); */
+  rgb_matrix_mode_noeeprom(RGB_MATRIX_RAINDROPS);
+  rgb_matrix_sethsv_noeeprom(HSV_CYAN);
 }
 
 // Add this to see if the slave is getting layer updates
@@ -313,6 +330,7 @@ void apply_led_layout(const uint8_t* layout[][6]) {
     }
 }
 
+static bool need_clear = false;
 bool rgb_matrix_indicators_user(void) {
     uint8_t layer = get_highest_layer(layer_state);
 
@@ -320,28 +338,48 @@ bool rgb_matrix_indicators_user(void) {
         case _NAV:
             /* rgb_matrix_set_color(39, 255, 255, 255); // Right underglow white */
             apply_led_layout(led_layout_nav);
+            need_clear = true;
+            return false;
             break;
 
         case _FUN:
             apply_led_layout(led_layout_fun);
+            need_clear = true;
             break;
 
         case _ADJUST:
+            if (rgb_just_changed) {
+                if (need_clear) {
+                    rgb_matrix_set_color_all(0, 0, 0);
+                    need_clear = false;
+                }
+                return true; // Let normal RGB modes work
+            }
             apply_led_layout(led_layout_adjust);
+            need_clear = true;
+            return false;
             break;
 
         case _LOWER:
             apply_led_layout(led_layout_lower);
+            need_clear = true;
+            return false;
             break;
 
         case _RAISE:
             apply_led_layout(led_layout_raise);
+            need_clear = true;
+            return false;
             break;
 
         default:
-            // Base layer - turn off all custom colors
+            // turn off all custom colors
+            if (need_clear) {
+                rgb_matrix_set_color_all(0, 0, 0);
+                need_clear = false;
+            }
             break;
     }
 
-    return false;
+    return true;
 }
